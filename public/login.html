@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualisation de Fichiers PDF</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Liste des Fichiers PDF</h1>
+        <input type="text" id="searchInput" placeholder="Rechercher un fichier...">
+        <ul id="fileList"></ul>
+
+    
+
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        socket.on('connect', () => {
+            socket.emit('getFiles');
+        });
+
+        socket.on('files', (files) => {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            files.forEach((file) => {
+                const listItem = document.createElement('li');
+                listItem.setAttribute('data-name', file.toLowerCase()); // Ajout de l'attribut pour la recherche
+                const link = document.createElement('a');
+                link.textContent = file;
+                link.href = `/pdfs/${file}`;  // Lien vers le fichier PDF
+                link.target = '_blank';  // Ouvrir dans un nouvel onglet
+                listItem.appendChild(link);
+                fileList.appendChild(listItem);
+            });
+
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', () => {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                files.forEach((file) => {
+                    const listItem = fileList.querySelector(`li[data-name="${file.toLowerCase()}"]`);
+                    if (listItem) {
+                        const fileName = file.toLowerCase();
+                        if (fileName.includes(searchTerm)) {
+                            listItem.style.display = 'block';
+                        } else {
+                            listItem.style.display = 'none';
+                        }
+                    }
+                });
+            });
+
+            searchInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Empêche le comportement par défaut du formulaire
+                    const searchTerm = searchInput.value.trim().toLowerCase();
+                    files.forEach((file) => {
+                        const listItem = fileList.querySelector(`li[data-name="${file.toLowerCase()}"]`);
+                        if (listItem) {
+                            const fileName = file.toLowerCase();
+                            if (fileName.includes(searchTerm)) {
+                                listItem.style.display = 'block';
+                            } else {
+                                listItem.style.display = 'none';
+                            }
+                        }
+                    });
+                }
+            });
+        });
+
+        socket.on('fileAdded', (fileName) => {
+            const fileList = document.getElementById('fileList');
+            const listItem = document.createElement('li');
+            listItem.setAttribute('data-name', fileName.toLowerCase());  // Ajout de l'attribut pour la recherche
+            const link = document.createElement('a');
+            link.textContent = fileName;
+            link.href = `/pdfs/${fileName}`;  // Lien vers le fichier PDF
+            link.target = '_blank';  // Ouvrir dans un nouvel onglet
+            listItem.appendChild(link);
+            fileList.appendChild(listItem);
+        });
+    </script>
+</body>
+</html>

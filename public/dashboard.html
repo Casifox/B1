@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="css/style.css"> <!-- Assurez-vous d'ajuster le chemin selon votre structure -->
+</head>
+<body>
+    <div class="container">
+        <h1>Tableau de bord</h1>
+        <p>Bienvenue, <span id="username"></span>!</p>
+        <p>Cette page est sécurisée.</p>
+        <p>Vous pouvez gérer vos fichiers PDF ici.</p>
+
+        <h2>Liste des Fichiers PDF</h2>
+        <input type="text" id="searchInput" placeholder="Rechercher un fichier...">
+        <ul id="fileList"></ul>
+
+        <h2>Ajouter un PDF</h2>
+        <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+            <label for="pdfFiles" class="upload-button">Choisir des fichiers PDF</label>
+            <input type="file" id="pdfFiles" name="pdfFiles" multiple accept=".pdf" required>
+            <button type="submit">Uploader</button>
+        </form>
+
+        <h2>Supprimer un PDF</h2>
+        <ul id="deleteList"></ul>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        socket.on('connect', () => {
+            socket.emit('getFiles');
+            const usernameElement = document.getElementById('username');
+            usernameElement.textContent = sessionStorage.getItem('username');
+        });
+
+        socket.on('files', (files) => {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            files.forEach((file) => {
+                const listItem = document.createElement('li');
+                listItem.setAttribute('data-name', file.toLowerCase()); // Ajout de l'attribut pour la recherche
+                const link = document.createElement('a');
+                link.textContent = file;
+                link.href = `/pdfs/${file}`;  // Lien vers le fichier PDF
+                link.target = '_blank';  // Ouvrir dans un nouvel onglet
+                listItem.appendChild(link);
+
+                // Bouton de suppression
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Supprimer';
+                deleteButton.addEventListener('click', () => {
+                    deleteFile(file);
+                });
+                listItem.appendChild(deleteButton);
+
+                fileList.appendChild(listItem);
+            });
+
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', () => {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                files.forEach((file) => {
+                    const listItem = fileList.querySelector(`li[data-name="${file.toLowerCase()}"]`);
+                    if (listItem) {
+                        const fileName = file.toLowerCase();
+                        if (fileName.includes(searchTerm)) {
+                            listItem.style.display = 'block';
+                        } else {
+                            listItem.style.display = 'none';
+                        }
+                    }
+                });
+            });
+
+            searchInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault(); // Empêche le comportement par défaut du formulaire
+                    const searchTerm = searchInput.value.trim().toLowerCase();
+                    files.forEach((file) => {
+                        const listItem = fileList.querySelector(`li[data-name="${file.toLowerCase()}"]`);
+                        if (listItem) {
+                            const fileName = file.toLowerCase();
+                            if (fileName.includes(searchTerm)) {
+                                listItem.style.display = 'block';
+                            } else {
+                                listItem.style.display = 'none';
+                            }
+                        }
+                    });
+                }
+            });
+        });
+
+        socket.on('fileAdded', (fileName) => {
+            const fileList = document.getElementById('fileList');
+            const listItem = document.createElement('li');
+            listItem.setAttribute('data-name', fileName.toLowerCase());  // Ajout de l'attribut pour la recherche
+            const link = document.createElement('a');
+            link.textContent = fileName;
+            link.href = `/pdfs/${fileName}`;  // Lien vers le fichier PDF
+            link.target = '_blank';  // Ouvrir dans un nouvel onglet
+            listItem.appendChild(link);
+
+            // Bouton de suppression
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Supprimer';
+            deleteButton.addEventListener('click', () => {
+                deleteFile(fileName);
+            });
+            listItem.appendChild(deleteButton);
+
+            fileList.appendChild(listItem);
+        });
+
+        socket.on('fileDeleted', (fileName) => {
+            const fileList = document.getElementById('fileList');
+            const listItem = fileList.querySelector(`li[data-name="${fileName.toLowerCase()}"]`);
+            if (listItem) {
+                listItem.remove();
+            }
+        });
+
+        function deleteFile(fileName) {
+            if (confirm(`Êtes-vous sûr de vouloir supprimer le fichier ${fileName} ?`)) {
+                fetch(`/delete/${fileName}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur lors de la suppression du fichier');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(data.message);
+                    socket.emit('fileDeleted', fileName); // Informer le serveur que le fichier a été supprimé
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
