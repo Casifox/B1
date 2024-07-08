@@ -6,8 +6,8 @@ body {
 }
 
 .container {
-    max-width: 800px;
-    margin: 20px auto;
+    max-width: 100%;
+    margin: 20px;
     padding: 20px;
     background-color: #fff;
     border-radius: 8px;
@@ -36,8 +36,8 @@ h1, h2 {
     text-decoration: none;
     color: #333;
     font-weight: bold;
-    display: inline-block;
-    width: 100%;
+    display: block; /* Changed to block for full width */
+    padding: 10px;
 }
 
 #fileList li a:hover {
@@ -50,6 +50,11 @@ form {
 
 input[type="file"] {
     margin-bottom: 10px;
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
 }
 
 button {
@@ -70,7 +75,8 @@ button:disabled {
     background-color: #ccc;
     cursor: not-allowed;
 }
-/* Ajout pour la barre de recherche */
+
+/* Search input styles */
 #searchInput {
     width: 100%;
     padding: 10px;
@@ -80,14 +86,10 @@ button:disabled {
     margin-bottom: 10px;
 }
 
-#fileList li {
-    display: block;
-}
-/* Styles spécifiques pour la page de connexion */
-
+/* Login form styles */
 #loginForm {
-    max-width: 400px;
-    margin: 20px auto;
+    max-width: 100%;
+    margin: 20px;
     padding: 20px;
     background-color: #fff;
     border-radius: 8px;
@@ -116,6 +118,7 @@ button:disabled {
     font-size: 1rem;
     border: 1px solid #ccc;
     border-radius: 5px;
+    margin-bottom: 10px;
 }
 
 #loginForm button {
@@ -131,4 +134,3 @@ button:disabled {
 #loginForm button:hover {
     background-color: #0056b3;
 }
-
